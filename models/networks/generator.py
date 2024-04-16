@@ -29,7 +29,7 @@ class SPADEGenerator(BaseNetwork):
 
         self.sw, self.sh = self.compute_latent_vector_size(opt)
 
-        self.Zencoder = Zencoder(3, 512)
+        self.Zencoder = Zencoder(1, 512)
 
 
         self.fc = nn.Conv2d(self.opt.semantic_nc, 16 * nf, 3, padding=1)
@@ -50,7 +50,7 @@ class SPADEGenerator(BaseNetwork):
             self.up_4 = SPADEResnetBlock(1 * nf, nf // 2, opt, Block_Name='up_4')
             final_nc = nf // 2
 
-        self.conv_img = nn.Conv2d(final_nc, 3, 3, padding=1)
+        self.conv_img = nn.Conv2d(final_nc, 1, 3, padding=1)
 
         self.up = nn.Upsample(scale_factor=2)
         #self.up = nn.Upsample(scale_factor=2, mode='bilinear')
@@ -106,7 +106,7 @@ class SPADEGenerator(BaseNetwork):
         #     x= self.up_4(x, seg, style_codes,  obj_dic=obj_dic)
 
         x = self.conv_img(F.leaky_relu(x, 2e-1))
-        x = F.tanh(x)
+        #x = F.tanh(x)
         return x
 
 

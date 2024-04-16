@@ -63,12 +63,14 @@ def tile_images(imgs, picturesPerRow=4):
 # |imtype|: the desired type of the converted numpy array
 def tensor2im(image_tensor, imtype=np.uint8, normalize=True, tile=False):
     if isinstance(image_tensor, list):
+        print(f"Image found to be list, splitting: {len(image_tensor)}")
         image_numpy = []
         for i in range(len(image_tensor)):
             image_numpy.append(tensor2im(image_tensor[i], imtype, normalize))
         return image_numpy
 
     if image_tensor.dim() == 4:
+        print(f"Image found to have more than 3 dimensions: {image_tensor.size()}, splitting")
         # transform each image in the batch
         images_np = []
         for b in range(image_tensor.size(0)):
@@ -76,12 +78,13 @@ def tensor2im(image_tensor, imtype=np.uint8, normalize=True, tile=False):
             one_image_np = tensor2im(one_image)
             images_np.append(one_image_np.reshape(1, *one_image_np.shape))
         images_np = np.concatenate(images_np, axis=0)
+        print(f"Image after splitting: {images_np.shape}, tiling: {tile}")
         if tile:
             images_tiled = tile_images(images_np)
             return images_tiled
         else:
             return images_np
-
+    print(f"Image shape: {image_tensor.size()}, checking for size 2 tensor")
     if image_tensor.dim() == 2:
         image_tensor = image_tensor.unsqueeze(0)
     image_numpy = image_tensor.detach().cpu().float().numpy()
@@ -91,13 +94,15 @@ def tensor2im(image_tensor, imtype=np.uint8, normalize=True, tile=False):
         image_numpy = np.transpose(image_numpy, (1, 2, 0)) * 255.0
     image_numpy = np.clip(image_numpy, 0, 255)
     if image_numpy.shape[2] == 1:
-        image_numpy = image_numpy[:, :, 0]
+        image_numpy = np.repeat(image_numpy,3,2)
+    print(f"Image shape: {image_numpy.shape}, done processing")
     return image_numpy.astype(imtype)
 
 
 # Converts a one-hot tensor into a colorful label map
 def tensor2label(label_tensor, n_label, imtype=np.uint8, tile=False):
     if label_tensor.dim() == 4:
+        print(f"Label found to have more than 3 dimensions: {label_tensor.size()}, splitting")
         # transform each image in the batch
         images_np = []
         for b in range(label_tensor.size(0)):
@@ -105,6 +110,7 @@ def tensor2label(label_tensor, n_label, imtype=np.uint8, tile=False):
             one_image_np = tensor2label(one_image, n_label, imtype)
             images_np.append(one_image_np.reshape(1, *one_image_np.shape))
         images_np = np.concatenate(images_np, axis=0)
+        print(f"Label after splitting: {images_np.shape}, tiling: {tile}")
         if tile:
             images_tiled = tile_images(images_np)
             return images_tiled
@@ -117,8 +123,9 @@ def tensor2label(label_tensor, n_label, imtype=np.uint8, tile=False):
     if n_label == 0:
         return tensor2im(label_tensor, imtype)
     label_tensor = label_tensor.cpu().float()
+    print(f"Label shape: {label_tensor.size()}, n_label: {n_label}, checking for size 1 tensor")
     if label_tensor.size()[0] > 1:
-        label_tensor = label_tensor.max(0, keepdim=True)[1]
+        label_tensor = torch.argmax(label_tensor, dim=0, keepdim=True)
     label_tensor = Colorize(n_label)(label_tensor)
     label_numpy = np.transpose(label_tensor.numpy(), (1, 2, 0))
     result = label_numpy.astype(imtype)
@@ -126,12 +133,14 @@ def tensor2label(label_tensor, n_label, imtype=np.uint8, tile=False):
 
 
 def save_image(image_numpy, image_path, create_dir=False):
+    print(f"Saving image of shape {image_numpy.shape} to {image_path}")
     if create_dir:
         os.makedirs(os.path.dirname(image_path), exist_ok=True)
     if len(image_numpy.shape) == 2:
         image_numpy = np.expand_dims(image_numpy, axis=2)
     if image_numpy.shape[2] == 1:
         image_numpy = np.repeat(image_numpy, 3, 2)
+    print(f"Image shape ready for pillow: {image_numpy.shape}")
     image_pil = Image.fromarray(image_numpy)
 
     # save to png
@@ -202,7 +211,7 @@ def save_network(net, label, epoch, opt):
 
 def load_network(net, label, epoch, opt):
     save_filename = '%s_net_%s.pth' % (epoch, label)
-    save_dir = os.path.join(opt.checkpoints_dir, opt.name)
+    save_dir = os.path.join('/home/bme001/20183502/code/qcardia-data/checkpoints', opt.name)
     save_path = os.path.join(save_dir, save_filename)
     weights = torch.load(save_path)
     net.load_state_dict(weights)

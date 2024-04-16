@@ -7,7 +7,7 @@ from data.pix2pix_dataset import Pix2pixDataset
 from data.image_folder import make_dataset
 
 
-class CustomDataset(Pix2pixDataset):
+class QcardiaDataset(Pix2pixDataset):
     """ Dataset that loads images from directories
         Use option --label_dir, --image_dir, --instance_dir to specify the directories.
         The images in the directories are sorted in alphabetical order and paired in order.
@@ -19,14 +19,14 @@ class CustomDataset(Pix2pixDataset):
         parser.set_defaults(preprocess_mode='resize_and_crop')
         load_size = 286 if is_train else 256
         parser.set_defaults(load_size=load_size)
-        parser.set_defaults(crop_size=256)
+        parser.set_defaults(crop_size=128)
         parser.set_defaults(display_winsize=256)
-        parser.set_defaults(label_nc=13)
+        parser.set_defaults(label_nc=3)
         parser.set_defaults(contain_dontcare_label=False)
 
-        parser.add_argument('--label_dir', type=str, required=True,
+        parser.add_argument('--label_dir', type=str, default='./datasets/qcardia/labels',
                             help='path to the directory that contains label images')
-        parser.add_argument('--image_dir', type=str, required=True,
+        parser.add_argument('--image_dir', type=str, default='./datasets/qcardia/images',
                             help='path to the directory that contains photo images')
         parser.add_argument('--instance_dir', type=str, default='',
                             help='path to the directory that contains instance maps. Leave black if not exists')

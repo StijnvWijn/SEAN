@@ -66,6 +66,7 @@ class Visualizer():
 
         if self.use_html: # save images to a html file
             for label, image_numpy in visuals.items():
+                print(f"image shape to be saved to HTML is {image_numpy.shape} for label {label}")
                 if isinstance(image_numpy, list):
                     for i in range(len(image_numpy)):
                         img_path = os.path.join(self.img_dir, 'epoch%.3d_iter%.3d_%s_%d.png' % (epoch, step, label, i))
@@ -127,12 +128,14 @@ class Visualizer():
 
     def convert_visuals_to_numpy(self, visuals):
         for key, t in visuals.items():
+            print(f"Image {key} about to be converted has shape {t.shape}")
             tile = self.opt.batchSize > 8
             if 'input_label' == key:
-                t = util.tensor2label(t, self.opt.label_nc + 2, tile=tile)
+                t = util.tensor2label(t, self.opt.label_nc, tile=tile)
             else:
                 t = util.tensor2im(t, tile=tile)
             visuals[key] = t
+            print(f"Image {key} has been converted to shape {t.shape}")
         return visuals
 
     # save image to the disk
